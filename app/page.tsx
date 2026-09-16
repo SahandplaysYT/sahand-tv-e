@@ -216,17 +216,19 @@ function MediaCard({
 function PlayerModal({
   selected,
   onClose,
+  resumeAt,
 }: {
   selected: SelectedItem
   onClose: () => void
+  resumeAt?: { season?: number; episode?: number }
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // TV state
   const [seasons, setSeasons] = useState<Season[]>([])
   const [seasonsLoading, setSeasonsLoading] = useState(false)
-  const [currentSeason, setCurrentSeason] = useState(1)
-  const [currentEpisode, setCurrentEpisode] = useState(1)
+  const [currentSeason, setCurrentSeason] = useState(resumeAt?.season ?? 1)
+  const [currentEpisode, setCurrentEpisode] = useState(resumeAt?.episode ?? 1)
   const [episodeCount, setEpisodeCount] = useState(1)
 
   // Fetch seasons when a TV show is selected
@@ -239,9 +241,11 @@ function PlayerModal({
         const list = data.seasons ?? []
         setSeasons(list)
         if (list.length > 0) {
-          setCurrentSeason(list[0].season_number)
-          setEpisodeCount(list[0].episode_count)
-          setCurrentEpisode(1)
+          const savedSeason = resumeAt?.season && list.some((season) => season.season_number === resumeAt.season) ? resumeAt.season : list[0].season_number
+          const savedSeasonData = list.find((season) => season.season_number === savedSeason) ?? list[0]
+          setCurrentSeason(savedSeason)
+          setEpisodeCount(savedSeasonData.episode_count)
+          setCurrentEpisode(Math.min(resumeAt?.episode ?? 1, savedSeasonData.episode_count))
         }
       })
       .catch(() => setSeasons([]))
@@ -432,6 +436,7 @@ export default function Page() {
 
   // Player
   const [selected, setSelected] = useState<SelectedItem | null>(null)
+  const [resumeAt, setResumeAt] = useState<{ season?: number; episode?: number }>()
 
   // Load saved name
   useEffect(() => {
@@ -453,6 +458,7 @@ export default function Page() {
     const next = [entry, ...history.filter((item) => item.key !== key)].slice(0, 20)
     setHistory(next)
     window.localStorage.setItem('sahand-tv-history', JSON.stringify(next))
+    setResumeAt(resume ? { season: resume.season, episode: resume.episode } : undefined)
     setSelected(selection)
   }
 
@@ -730,9 +736,9 @@ export default function Page() {
       )}
 
       {/* Player modal */}
-      {selected && (
-        <PlayerModal selected={selected} onClose={() => setSelected(null)} />
-      )}
+  {selected && (
+          <PlayerModal selected={selected} resumeAt={resumeAt} onClose={() => { setSelected(null); setResumeAt(undefined) }} />
+        )}
 
       {/* iOS / iPadOS install prompt */}
       <IOSInstallBanner />
