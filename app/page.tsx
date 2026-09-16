@@ -188,7 +188,7 @@ function MediaCard({
         onClick={onClick}
         className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e9a23b] focus-visible:ring-offset-4 focus-visible:ring-offset-[#08090d]"
       >
-        <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-white/[0.06]">
+        <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-white/[0.06]">
           <img
             src={posterPath ? `${POSTER_BASE}${posterPath}` : '/placeholder.svg'}
             alt={`${title} poster`}
@@ -426,8 +426,9 @@ export default function Page() {
 
   useEffect(() => {
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    const isPreview = window.location.hostname.includes('localhost') || window.location.hostname.includes('vercel.app')
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
-    setRequiresIOSInstall(isIOS && !isStandalone)
+    setRequiresIOSInstall(isIOS && !isStandalone && !isPreview)
   }, [])
 
   // Tab
@@ -626,26 +627,21 @@ export default function Page() {
       </header>
 
       {/* Hero */}
-      <section className={`relative mx-auto max-w-7xl overflow-hidden px-6 pb-12 pt-16 lg:px-16 lg:pt-24 ${activeTab === 'history' ? 'hidden' : ''}`}>
-        <div className="pointer-events-none absolute right-0 top-0 size-[500px] rounded-full bg-[#e9a23b]/10 blur-3xl" />
+      <section className={`hero-glow relative mx-auto max-w-7xl overflow-hidden px-6 pb-12 pt-16 lg:px-16 lg:pt-24 ${activeTab === 'history' ? 'hidden' : ''}`}>
+        <div className="pointer-events-none absolute right-0 top-0 size-[560px] rounded-full bg-[#e9a23b]/10 blur-3xl" />
         <div className="relative z-10 max-w-3xl">
-          <p className="mb-5 text-sm font-semibold tracking-[0.2em] text-[#e9a23b] uppercase">
-            Good to see you, {name}
-          </p>
-          <h1 className="text-5xl font-semibold leading-[1.02] tracking-[-0.05em] sm:text-7xl">
-            Find your next
-            <br />
-            <span className="text-white/35">great watch.</span>
-          </h1>
-          <p className="mt-7 max-w-xl text-lg leading-8 text-white/50">
-            {activeTab === 'movie'
-              ? 'Explore movies, rediscover classics, and stream instantly.'
-              : 'Find your next series, pick a season and episode, and start watching.'}
-          </p>
+          <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#f0a23a]">Movies & TV</p>
+          <h1 className="text-5xl font-semibold leading-[0.94] tracking-[-0.06em] sm:text-7xl lg:text-[5.6rem]">Movies & TV<br /><span className="text-white/40">free, forever.</span></h1>
+          <p className="mt-6 max-w-md text-sm leading-6 text-white/50">Your personal streaming space for the stories you love. Discover something new, or continue exactly where you left off.</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <button onClick={() => setActiveTab('movie')} className="rounded-md bg-white px-6 py-3 text-sm font-bold text-[#08090d] transition hover:bg-[#f0a23a]">Browse now</button>
+            <button onClick={() => setActiveTab('history')} className="rounded-md border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">Continue watching</button>
+          </div>
         </div>
+        <div className="pointer-events-none absolute right-10 top-24 hidden w-64 text-center lg:block"><p className="text-sm font-semibold text-white/80">Download the app</p><p className="mt-2 text-xs text-white/35">Take your watchlist anywhere.</p><div className="mx-auto mt-5 grid size-14 place-items-center rounded-2xl bg-white text-xl font-black text-[#08090d] shadow-[0_0_40px_rgba(255,255,255,0.12)]">S</div></div>
         <form
           onSubmit={handleSearch}
-          className="relative z-10 mt-10 flex max-w-2xl items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-2 focus-within:border-[#e9a23b]/70"
+          className="relative z-10 mt-10 flex max-w-2xl items-center gap-3 rounded-md border border-white/10 bg-black/35 p-2 focus-within:border-[#e9a23b]/70"
         >
           <span className="pl-4 text-xl text-white/40">⌕</span>
           <label className="sr-only" htmlFor="media-search">
@@ -676,14 +672,14 @@ export default function Page() {
         <div className="mb-6 flex items-end justify-between">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] text-white/35 uppercase">
-              Your results
+              Explore the collection
             </p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight">
               {searchedQuery
                 ? `Results for "${searchedQuery}"`
                 : activeTab === 'movie'
-                ? 'Search for a movie'
-                : 'Search for a TV show'}
+                ? 'Popular watching'
+                : 'Series worth starting'}
             </h2>
           </div>
           {!isPlaceholder &&

@@ -167,6 +167,9 @@
   }
 }
 
+/* Cinematic streaming landing treatment. */
+.hero-glow { background: radial-gradient(circle at 78% 15%, rgba(233,162,59,.24), transparent 32%), radial-gradient(circle at 42% 50%, rgba(255,255,255,.04), transparent 38%); }
+
 /* Mobile-first app shell: comfortable touch targets and iOS safe areas. */
 html, body { min-height: 100%; background: #08090d; }
 button, a, input, select { -webkit-tap-highlight-color: transparent; }
