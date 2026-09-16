@@ -485,6 +485,19 @@ export default function Page() {
     setSearchedQuery('')
     setMovies(PLACEHOLDER_MOVIES)
     setShows(PLACEHOLDER_TV)
+    if (activeTab === 'history') return
+    const controller = new AbortController()
+    setLoading(true)
+    fetch(`/api/movies?type=${activeTab}`, { signal: controller.signal })
+      .then(async (res) => {
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Could not load popular titles.')
+        if (activeTab === 'movie') setMovies(data.results ?? [])
+        else setShows(data.results ?? [])
+      })
+      .catch((err) => { if (!(err instanceof DOMException && err.name === 'AbortError')) setError(err instanceof Error ? err.message : 'Could not load titles.') })
+      .finally(() => setLoading(false))
+    return () => controller.abort()
   }, [activeTab])
 
   useEffect(() => {
