@@ -174,9 +174,13 @@
 
 /* Mobile-first app shell: comfortable touch targets and iOS safe areas. */
 html, body { min-height: 100%; background: #08090d; }
+body { background-image: radial-gradient(ellipse at 50% -10%, rgba(240,162,58,.11), transparent 34%), radial-gradient(ellipse at 100% 45%, rgba(42,55,73,.16), transparent 32%), linear-gradient(145deg, #08090d 0%, #0b0e14 48%, #08090d 100%); background-attachment: fixed; }
 button, a, input, select { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 640px) {
   body { overflow-x: hidden; }
+  .header-search-mobile { box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  .hero-glow { background: radial-gradient(ellipse at 75% 5%, rgba(233,162,59,.19), transparent 35%), linear-gradient(180deg, rgba(255,255,255,.018), transparent 72%); }
+
   header { position: sticky; top: 0; z-index: 30; }
   header > div { flex-wrap: wrap; gap: 0.75rem; padding: 0.75rem 1rem; }
   header form { order: 3; width: 100%; }
