@@ -102,7 +102,7 @@ function IOSInstallGate() {
   return (
     <main className="ios-install-gate min-h-screen bg-[#08090d] px-5 py-10 text-white sm:px-8">
       <div className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-md flex-col justify-center text-center">
-        <div className="mx-auto grid size-20 place-items-center rounded-[1.75rem] bg-[#e9a23b] text-4xl font-bold text-[#08090d] shadow-[0_0_60px_rgba(233,162,59,0.22)]">S</div>
+        <div className="mx-auto grid size-20 place-items-center rounded-[1.75rem] border border-[#f0a23a]/40 bg-gradient-to-br from-[#f0a23a] to-[#d96d2b] text-2xl font-black tracking-[-0.12em] text-[#08090d] shadow-[0_0_60px_rgba(233,162,59,0.22)]">STV</div>
         <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-[#e9a23b]">Sahand TV</p>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Add the app to continue</h1>
         <p className="mt-4 text-sm leading-6 text-white/55">On iPhone and iPad, Sahand TV works as a Home Screen app so your watch history and full-screen player work properly.</p>
@@ -188,7 +188,7 @@ function MediaCard({
         onClick={onClick}
         className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e9a23b] focus-visible:ring-offset-4 focus-visible:ring-offset-[#08090d]"
       >
-        <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-white/[0.06]">
+        <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-white/[0.06]">
           <img
             src={posterPath ? `${POSTER_BASE}${posterPath}` : '/placeholder.svg'}
             alt={`${title} poster`}
@@ -427,7 +427,7 @@ export default function Page() {
   useEffect(() => {
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
-    setRequiresIOSInstall(isIOS && !isStandalone)
+    setRequiresIOSInstall(isIOS && !isStandalone && process.env.NODE_ENV === 'production')
   }, [])
 
   // Tab
@@ -524,7 +524,7 @@ export default function Page() {
           <div className="pointer-events-none absolute -right-40 -top-40 size-[520px] rounded-full bg-[#e9a23b]/15 blur-3xl" />
           <div className="relative z-10 max-w-2xl">
             <div className="mb-10 flex items-center gap-3 text-sm font-semibold tracking-[0.22em] text-[#f1b45d] uppercase">
-              <span className="grid size-9 place-items-center rounded-xl bg-[#e9a23b] text-lg text-[#08090d]">S</span>
+              <span className="grid size-9 place-items-center rounded-xl border border-[#f0a23a]/40 bg-gradient-to-br from-[#f0a23a] to-[#d96d2b] text-[10px] font-black tracking-[-0.12em] text-[#08090d]">STV</span>
               Sahand TV
             </div>
             <p className="mb-4 text-sm font-medium tracking-[0.18em] text-white/45 uppercase">
@@ -578,12 +578,18 @@ export default function Page() {
       {/* Header */}
       <header className="border-b border-white/[0.08] bg-[#08090d]/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-16">
-          <div className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-xl bg-[#e9a23b] font-bold text-[#08090d]">
-              S
-            </span>
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-xl border border-[#f0a23a]/40 bg-gradient-to-br from-[#f0a23a] to-[#d96d2b] text-sm font-black tracking-[-0.08em] text-[#08090d] shadow-[0_0_24px_rgba(240,162,58,.18)]">STV</span>
             <span className="font-semibold tracking-tight">Sahand TV</span>
           </div>
+          <form onSubmit={handleSearch} className="header-search group relative hidden min-w-0 flex-1 items-center rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 shadow-[0_12px_40px_rgba(0,0,0,.24)] transition focus-within:border-[#f0a23a]/60 focus-within:bg-white/[0.1] md:flex md:max-w-xl">
+            <Search size={18} className="ml-3 shrink-0 text-white/35 transition group-focus-within:text-[#f0a23a]" />
+            <label className="sr-only" htmlFor="header-media-search">Search the Sahand TV library</label>
+            <input id="header-media-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${activeTab === 'tv' ? 'TV shows' : 'movies'}...`} className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-white/30" />
+            {query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search" className="mr-2 grid size-7 place-items-center rounded-full text-white/35 hover:bg-white/10 hover:text-white">×</button>}
+            <span className="mr-2 hidden rounded-md border border-white/10 px-2 py-1 text-[10px] text-white/25 lg:block">ENTER</span>
+            <button type="submit" disabled={loading} className="rounded-xl bg-[#f0a23a] px-4 py-2.5 text-xs font-bold text-[#08090d] transition hover:bg-[#ffc16b] disabled:opacity-50">{loading ? '...' : 'Search'}</button>
+          </form>
           {/* Tab nav */}
           <nav
             aria-label="Content type"
@@ -618,6 +624,12 @@ export default function Page() {
               <HistoryIcon size={15} /> History
             </button>
           </nav>
+          <form onSubmit={handleSearch} className="header-search-mobile flex w-full items-center rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 md:hidden">
+            <Search size={17} className="ml-3 shrink-0 text-white/35" />
+            <label className="sr-only" htmlFor="mobile-media-search">Search the Sahand TV library</label>
+            <input id="mobile-media-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search the library..." className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-white/30" />
+            <button type="submit" disabled={loading} className="rounded-xl bg-[#f0a23a] px-3.5 py-2.5 text-xs font-bold text-[#08090d] disabled:opacity-50">{loading ? '...' : 'Go'}</button>
+          </form>
           <div className="hidden text-right sm:block">
             <p className="text-xs text-white/35">Watching as</p>
             <p className="text-sm font-medium">{name}</p>
@@ -626,64 +638,35 @@ export default function Page() {
       </header>
 
       {/* Hero */}
-      <section className={`relative mx-auto max-w-7xl overflow-hidden px-6 pb-12 pt-16 lg:px-16 lg:pt-24 ${activeTab === 'history' ? 'hidden' : ''}`}>
-        <div className="pointer-events-none absolute right-0 top-0 size-[500px] rounded-full bg-[#e9a23b]/10 blur-3xl" />
+      <section className={`hero-glow relative mx-auto max-w-7xl overflow-hidden border-b border-white/[0.06] px-6 pb-12 pt-16 lg:min-h-[470px] lg:px-16 lg:pb-16 lg:pt-24 ${activeTab === 'history' ? 'hidden' : ''}`}>
+        <div className="hero-orb pointer-events-none absolute -right-24 -top-28 size-[620px] rounded-full blur-3xl" />
         <div className="relative z-10 max-w-3xl">
-          <p className="mb-5 text-sm font-semibold tracking-[0.2em] text-[#e9a23b] uppercase">
-            Good to see you, {name}
-          </p>
-          <h1 className="text-5xl font-semibold leading-[1.02] tracking-[-0.05em] sm:text-7xl">
-            Find your next
-            <br />
-            <span className="text-white/35">great watch.</span>
-          </h1>
-          <p className="mt-7 max-w-xl text-lg leading-8 text-white/50">
-            {activeTab === 'movie'
-              ? 'Explore movies, rediscover classics, and stream instantly.'
-              : 'Find your next series, pick a season and episode, and start watching.'}
-          </p>
+          <h1 className="text-5xl font-semibold leading-[0.94] tracking-[-0.06em] sm:text-7xl lg:text-[5.4rem]">Movies & TV<br /><span className="text-white/35">free, forever.</span></h1>
+          <p className="mt-6 max-w-md text-sm leading-6 text-white/45">Stream your favorite movies and shows without the noise. Discover something new, or pick up right where you left off.</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <button onClick={() => setActiveTab('movie')} className="rounded-md bg-white px-6 py-3 text-sm font-bold text-[#08090d] transition hover:bg-[#f0a23a]">Browse now</button>
+            <button onClick={() => setActiveTab('history')} className="rounded-md border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">My history</button>
+          </div>
         </div>
-        <form
-          onSubmit={handleSearch}
-          className="relative z-10 mt-10 flex max-w-2xl items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-2 focus-within:border-[#e9a23b]/70"
-        >
-          <span className="pl-4 text-xl text-white/40">⌕</span>
-          <label className="sr-only" htmlFor="media-search">
-            Search for {activeTab === 'movie' ? 'movies' : 'TV shows'}
-          </label>
-          <input
-            id="media-search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search for a ${activeTab === 'movie' ? 'movie' : 'TV show'}…`}
-            className="h-12 min-w-0 flex-1 bg-transparent px-2 text-base outline-none placeholder:text-white/30"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-[#e9a23b] px-5 py-3 text-sm font-semibold text-[#08090d] disabled:opacity-50"
-          >
-            {loading ? 'Searching…' : 'Search'}
-          </button>
-        </form>
+        <div className="hero-download pointer-events-none absolute right-16 top-32 hidden w-64 text-center lg:block"><p className="text-sm font-semibold text-white/80">Download the app</p><p className="mt-2 text-xs text-white/35">Watch anywhere, anytime.</p><div className="mx-auto mt-5 grid size-14 place-items-center rounded-xl border border-[#f0a23a]/40 bg-gradient-to-br from-[#f0a23a] to-[#d96d2b] text-sm font-black tracking-[-0.12em] text-[#08090d] shadow-[0_0_40px_rgba(255,255,255,0.16)]">STV</div><div className="mt-8 flex items-center justify-center gap-1.5"><i className="size-1.5 rounded-full bg-white" /><i className="size-1.5 rounded-full bg-white/25" /><i className="size-1.5 rounded-full bg-white/25" /><i className="size-1.5 rounded-full bg-white/25" /><i className="size-1.5 rounded-full bg-white/25" /></div></div>
       </section>
 
       {/* Results grid */}
       {activeTab === 'history' ? (
         <section className="mx-auto max-w-7xl px-6 pb-16 pt-14 lg:px-16"><HistoryPanel entries={history} onResume={resumeEntry} onClear={clearHistory} /></section>
       ) : (
-      <section className="mx-auto max-w-7xl px-6 pb-16 lg:px-16">
+      <section className="mx-auto max-w-7xl px-6 pb-16 pt-8 lg:px-16">
         <div className="mb-6 flex items-end justify-between">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] text-white/35 uppercase">
-              Your results
+              Explore the collection
             </p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight">
               {searchedQuery
                 ? `Results for "${searchedQuery}"`
                 : activeTab === 'movie'
-                ? 'Search for a movie'
-                : 'Search for a TV show'}
+                ? 'Popular watching'
+                : 'Series worth starting'}
             </h2>
           </div>
           {!isPlaceholder &&
