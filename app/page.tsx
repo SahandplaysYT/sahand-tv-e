@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { Clock3, Film, History as HistoryIcon, Play, Search, Trash2 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,6 +36,23 @@ type Season = {
 type SelectedItem =
   | { type: 'movie'; item: Movie }
   | { type: 'tv'; item: TVShow }
+
+type HistoryEntry = {
+  key: string
+  type: MediaType
+  id: number
+  title: string
+  poster_path: string | null
+  year: string
+  season?: number
+  episode?: number
+  progress: number
+  lastWatched: number
+  timeline: string[]
+  item: Movie | TVShow
+}
+
+type AppTab = MediaType | 'history'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -367,6 +385,31 @@ function PlayerModal({
   )
 }
 
+function HistoryPanel({ entries, onResume, onClear }: { entries: HistoryEntry[]; onResume: (entry: HistoryEntry) => void; onClear: () => void }) {
+  if (!entries.length) {
+    return (
+      <div className="rounded-[2rem] border border-dashed border-white/10 bg-white/[0.025] px-6 py-20 text-center">
+        <div className="mx-auto mb-5 grid size-16 place-items-center rounded-2xl bg-[#e9a23b]/12 text-[#e9a23b]"><Clock3 size={28} /></div>
+        <h2 className="text-2xl font-semibold">Your timeline starts here</h2>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/40">Start watching something and Sahand TV will remember where you left off, even when you close the app.</p>
+      </div>
+    )
+  }
+  const current = entries[0]
+  return (
+    <div className="space-y-10">
+      <section>
+        <div className="mb-5 flex items-end justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#e9a23b]">Pick up where you left off</p><h2 className="mt-2 text-2xl font-semibold">Continue watching</h2></div><button onClick={onClear} className="flex items-center gap-2 text-xs text-white/35 hover:text-white"><Trash2 size={14} /> Clear history</button></div>
+        <button onClick={() => onResume(current)} className="group flex w-full flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.06] text-left transition hover:border-[#e9a23b]/50 sm:flex-row">
+          <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-white/5 sm:w-72"><img src={current.poster_path ? `${POSTER_BASE}${current.poster_path}` : '/placeholder.svg'} alt={`${current.title} poster`} className="size-full object-cover transition duration-500 group-hover:scale-105" /><div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" /><span className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-[#e9a23b] px-3 py-1.5 text-xs font-bold text-[#08090d]"><Play size={12} fill="currentColor" /> Resume</span></div>
+          <div className="flex flex-1 flex-col justify-center p-6"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/35">{current.type === 'tv' ? `S${current.season} · E${current.episode}` : 'Movie'} · {current.year || 'Unknown year'}</p><h3 className="mt-2 text-2xl font-semibold">{current.title}</h3><p className="mt-2 text-sm text-white/40">Paused {new Date(current.lastWatched).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p><div className="mt-6 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#e9a23b]" style={{ width: `${current.progress}%` }} /></div><p className="mt-2 text-xs text-white/35">{current.progress}% watched</p></div>
+        </button>
+      </section>
+      <section><div className="mb-5 flex items-center gap-3"><HistoryIcon size={18} className="text-[#e9a23b]" /><h2 className="text-xl font-semibold">Watch timeline</h2></div><div className="divide-y divide-white/[0.07] rounded-2xl border border-white/[0.08] bg-white/[0.025] px-5">{entries.map((entry) => <button key={entry.key} onClick={() => onResume(entry)} className="flex w-full items-center gap-4 py-4 text-left hover:bg-white/[0.03]"><div className="size-12 shrink-0 overflow-hidden rounded-xl bg-white/10"><img src={entry.poster_path ? `${POSTER_BASE}${entry.poster_path}` : '/placeholder.svg'} alt="" className="size-full object-cover" /></div><div className="min-w-0 flex-1"><p className="truncate font-medium">{entry.title}</p><p className="mt-1 text-xs text-white/35">{entry.type === 'tv' ? `Season ${entry.season}, Episode ${entry.episode}` : 'Movie'} · {new Date(entry.lastWatched).toLocaleString()}</p></div><span className="text-xs text-[#e9a23b]">{entry.progress}%</span><Play size={15} className="text-white/25" /></button>)}</div></section>
+    </div>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
@@ -376,7 +419,8 @@ export default function Page() {
   const [draftName, setDraftName] = useState('')
 
   // Tab
-  const [activeTab, setActiveTab] = useState<MediaType>('movie')
+  const [activeTab, setActiveTab] = useState<AppTab>('movie')
+  const [history, setHistory] = useState<HistoryEntry[]>([])
 
   // Search
   const [query, setQuery] = useState('')
@@ -393,7 +437,28 @@ export default function Page() {
   useEffect(() => {
     const saved = window.localStorage.getItem('sahand-tv-name')
     if (saved) setName(saved)
+    const savedHistory = window.localStorage.getItem('sahand-tv-history')
+    if (savedHistory) {
+      try { setHistory(JSON.parse(savedHistory)) } catch { window.localStorage.removeItem('sahand-tv-history') }
+    }
   }, [])
+
+  function openMedia(selection: SelectedItem, resume?: HistoryEntry) {
+    const item = selection.item
+    const title = selection.type === 'movie' ? item.title : item.name
+    const year = selection.type === 'movie' ? item.release_date?.slice(0, 4) : item.first_air_date?.slice(0, 4)
+    const key = `${selection.type}-${item.id}`
+    const existing = history.find((entry) => entry.key === key)
+    const entry: HistoryEntry = { key, type: selection.type, id: item.id, title, poster_path: item.poster_path, year, season: resume?.season ?? existing?.season ?? 1, episode: resume?.episode ?? existing?.episode ?? 1, progress: Math.max(resume?.progress ?? existing?.progress ?? 8, 8), lastWatched: Date.now(), timeline: resume?.timeline ?? existing?.timeline ?? ['Opened title', 'Started watching'], item }
+    const next = [entry, ...history.filter((item) => item.key !== key)].slice(0, 20)
+    setHistory(next)
+    window.localStorage.setItem('sahand-tv-history', JSON.stringify(next))
+    setSelected(selection)
+  }
+
+  function resumeEntry(entry: HistoryEntry) { openMedia({ type: entry.type, item: entry.item } as SelectedItem, entry) }
+
+  function clearHistory() { setHistory([]); window.localStorage.removeItem('sahand-tv-history') }
 
   // Reset search state on tab change
   useEffect(() => {
@@ -529,6 +594,14 @@ export default function Page() {
             >
               TV Shows
             </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center gap-2 rounded-full px-5 py-2 font-medium transition ${
+                activeTab === 'history' ? 'bg-[#e9a23b] text-[#08090d]' : 'text-white/45 hover:text-white/70'
+              }`}
+            >
+              <HistoryIcon size={15} /> History
+            </button>
           </nav>
           <div className="hidden text-right sm:block">
             <p className="text-xs text-white/35">Watching as</p>
@@ -538,7 +611,7 @@ export default function Page() {
       </header>
 
       {/* Hero */}
-      <section className="relative mx-auto max-w-7xl overflow-hidden px-6 pb-12 pt-16 lg:px-16 lg:pt-24">
+      <section className={`relative mx-auto max-w-7xl overflow-hidden px-6 pb-12 pt-16 lg:px-16 lg:pt-24 ${activeTab === 'history' ? 'hidden' : ''}`}>
         <div className="pointer-events-none absolute right-0 top-0 size-[500px] rounded-full bg-[#e9a23b]/10 blur-3xl" />
         <div className="relative z-10 max-w-3xl">
           <p className="mb-5 text-sm font-semibold tracking-[0.2em] text-[#e9a23b] uppercase">
@@ -581,6 +654,9 @@ export default function Page() {
       </section>
 
       {/* Results grid */}
+      {activeTab === 'history' ? (
+        <section className="mx-auto max-w-7xl px-6 pb-16 pt-14 lg:px-16"><HistoryPanel entries={history} onResume={resumeEntry} onClear={clearHistory} /></section>
+      ) : (
       <section className="mx-auto max-w-7xl px-6 pb-16 lg:px-16">
         <div className="mb-6 flex items-end justify-between">
           <div>
@@ -632,7 +708,7 @@ export default function Page() {
                 year={movie.release_date?.slice(0, 4)}
                 posterPath={movie.poster_path}
                 rating={movie.vote_average}
-                onClick={() => setSelected({ type: 'movie', item: movie })}
+                onClick={() => openMedia({ type: 'movie', item: movie })}
               />
             ))}
           </div>
@@ -645,12 +721,13 @@ export default function Page() {
                 year={show.first_air_date?.slice(0, 4)}
                 posterPath={show.poster_path}
                 rating={show.vote_average}
-                onClick={() => setSelected({ type: 'tv', item: show })}
+                onClick={() => openMedia({ type: 'tv', item: show })}
               />
             ))}
           </div>
         )}
       </section>
+      )}
 
       {/* Player modal */}
       {selected && (
