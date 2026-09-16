@@ -121,8 +121,8 @@ function IOSInstallBanner() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
-    const isInStandaloneMode = 'standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true)
     if (isIOS && !isInStandaloneMode) {
       const t = setTimeout(() => setVisible(true), 1500)
       return () => clearTimeout(t)
@@ -136,8 +136,8 @@ function IOSInstallBanner() {
       <div className="mx-auto max-w-sm rounded-2xl border border-white/10 bg-[#1a1c25] p-4 shadow-2xl">
         <div className="flex items-start gap-3">
           {/* App icon */}
-          <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#e9a23b] text-xl font-bold text-[#08090d]">
-            S
+          <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-[#f0a23a]/40 bg-gradient-to-br from-[#f0a23a] to-[#d96d2b] text-sm font-black tracking-[-0.12em] text-[#08090d]">
+            STV
           </div>
           <div className="flex-1">
             <p className="font-semibold text-white">Add Sahand TV to your Home Screen</p>
@@ -425,7 +425,7 @@ export default function Page() {
   const [requiresIOSInstall, setRequiresIOSInstall] = useState(false)
 
   useEffect(() => {
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
     setRequiresIOSInstall(isIOS && !isStandalone && process.env.NODE_ENV === 'production')
   }, [])
@@ -441,6 +441,10 @@ export default function Page() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searchedQuery, setSearchedQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<Array<Movie | TVShow>>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const searchShellRef = useRef<HTMLDivElement>(null)
 
   // Player
   const [selected, setSelected] = useState<SelectedItem | null>(null)
@@ -482,6 +486,39 @@ export default function Page() {
     setMovies(PLACEHOLDER_MOVIES)
     setShows(PLACEHOLDER_TV)
   }, [activeTab])
+
+  useEffect(() => {
+    const trimmed = query.trim()
+    if (activeTab === 'history' || trimmed.length < 2) {
+      setSuggestions([])
+      setSuggestionsLoading(false)
+      return
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      setSuggestionsLoading(true)
+      try {
+        const res = await fetch(`/api/movies?type=${activeTab}&query=${encodeURIComponent(trimmed)}`, { signal: controller.signal })
+        const data = await res.json()
+        if (res.ok) setSuggestions((data.results ?? []).slice(0, 5))
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) setSuggestions([])
+      } finally {
+        setSuggestionsLoading(false)
+      }
+    }, 280)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [query, activeTab])
+
+  useEffect(() => {
+    function closeSuggestions(event: MouseEvent) {
+      if (!searchShellRef.current?.contains(event.target as Node)) setShowSuggestions(false)
+    }
+    function handleEscape(event: KeyboardEvent) { if (event.key === 'Escape') setShowSuggestions(false) }
+    document.addEventListener('mousedown', closeSuggestions)
+    document.addEventListener('keydown', handleEscape)
+    return () => { document.removeEventListener('mousedown', closeSuggestions); document.removeEventListener('keydown', handleEscape) }
+  }, [])
 
   async function handleSearch(event?: FormEvent) {
     event?.preventDefault()
@@ -577,7 +614,7 @@ export default function Page() {
     <main className="min-h-screen bg-[#08090d] text-white">
       {/* Header */}
       <header className="border-b border-white/[0.08] bg-[#08090d]/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-16">
+        <div ref={searchShellRef} className="relative mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-16">
           <div className="flex shrink-0 items-center gap-3">
             <span className="grid size-10 place-items-center rounded-xl border border-[#f0a23a]/40 bg-gradient-to-br from-[#f0a23a] to-[#d96d2b] text-sm font-black tracking-[-0.08em] text-[#08090d] shadow-[0_0_24px_rgba(240,162,58,.18)]">STV</span>
             <span className="font-semibold tracking-tight">Sahand TV</span>
@@ -585,11 +622,21 @@ export default function Page() {
           <form onSubmit={handleSearch} className="header-search group relative hidden min-w-0 flex-1 items-center rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 shadow-[0_12px_40px_rgba(0,0,0,.24)] transition focus-within:border-[#f0a23a]/60 focus-within:bg-white/[0.1] md:flex md:max-w-xl">
             <Search size={18} className="ml-3 shrink-0 text-white/35 transition group-focus-within:text-[#f0a23a]" />
             <label className="sr-only" htmlFor="header-media-search">Search the Sahand TV library</label>
-            <input id="header-media-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${activeTab === 'tv' ? 'TV shows' : 'movies'}...`} className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-white/30" />
+            <input id="header-media-search" value={query} onChange={(e) => { setQuery(e.target.value); setShowSuggestions(true) }} onFocus={() => setShowSuggestions(true)} placeholder={`Search ${activeTab === 'tv' ? 'TV shows' : 'movies'}...`} className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-white/30" />
             {query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search" className="mr-2 grid size-7 place-items-center rounded-full text-white/35 hover:bg-white/10 hover:text-white">×</button>}
             <span className="mr-2 hidden rounded-md border border-white/10 px-2 py-1 text-[10px] text-white/25 lg:block">ENTER</span>
             <button type="submit" disabled={loading} className="rounded-xl bg-[#f0a23a] px-4 py-2.5 text-xs font-bold text-[#08090d] transition hover:bg-[#ffc16b] disabled:opacity-50">{loading ? '...' : 'Search'}</button>
           </form>
+          {showSuggestions && query.trim().length >= 2 && activeTab !== 'history' && (
+            <div className="absolute left-6 right-6 top-[calc(100%-0.5rem)] z-40 overflow-hidden rounded-2xl border border-white/10 bg-[#151820]/[.98] p-2 shadow-2xl backdrop-blur-xl md:left-[24%] md:right-[24%] md:top-[calc(100%-0.75rem)]">
+              {suggestionsLoading ? <p className="px-4 py-5 text-sm text-white/40">Finding titles...</p> : suggestions.length ? suggestions.map((item) => {
+                const isMovie = activeTab === 'movie'
+                const title = isMovie ? (item as Movie).title : (item as TVShow).name
+                const year = isMovie ? (item as Movie).release_date?.slice(0, 4) : (item as TVShow).first_air_date?.slice(0, 4)
+                return <button key={item.id} onClick={() => { openMedia({ type: activeTab as MediaType, item: item as Movie & TVShow }); setShowSuggestions(false) }} className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/10"><div className="size-11 shrink-0 overflow-hidden rounded-lg bg-white/10">{item.poster_path && <img src={`${POSTER_BASE}${item.poster_path}`} alt="" className="size-full object-cover" />}</div><span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium text-white">{title}</strong><span className="text-xs text-white/35">{isMovie ? 'Movie' : 'TV show'}{year ? ` · ${year}` : ''}</span></span><Play size={14} className="mr-2 text-[#f0a23a]" /></button>
+              }) : <p className="px-4 py-5 text-sm text-white/40">No titles found yet.</p>}
+            </div>
+          )}
           {/* Tab nav */}
           <nav
             aria-label="Content type"
@@ -627,7 +674,7 @@ export default function Page() {
           <form onSubmit={handleSearch} className="header-search-mobile flex w-full items-center rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 md:hidden">
             <Search size={17} className="ml-3 shrink-0 text-white/35" />
             <label className="sr-only" htmlFor="mobile-media-search">Search the Sahand TV library</label>
-            <input id="mobile-media-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search the library..." className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-white/30" />
+            <input id="mobile-media-search" value={query} onChange={(e) => { setQuery(e.target.value); setShowSuggestions(true) }} onFocus={() => setShowSuggestions(true)} placeholder="Search the library..." className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-white/30" />
             <button type="submit" disabled={loading} className="rounded-xl bg-[#f0a23a] px-3.5 py-2.5 text-xs font-bold text-[#08090d] disabled:opacity-50">{loading ? '...' : 'Go'}</button>
           </form>
           <div className="hidden text-right sm:block">
