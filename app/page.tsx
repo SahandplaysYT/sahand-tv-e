@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import { Clock3, Film, History as HistoryIcon, Play, Search, Trash2 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
@@ -98,26 +98,35 @@ function cinesrcUrl(selected: SelectedItem, season: number, episode: number): st
 // iOS "Add to Home Screen" banner
 // ---------------------------------------------------------------------------
 
+function IOSInstallGate() {
+  return (
+    <main className="ios-install-gate min-h-screen bg-[#08090d] px-5 py-10 text-white sm:px-8">
+      <div className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-md flex-col justify-center text-center">
+        <div className="mx-auto grid size-20 place-items-center rounded-[1.75rem] bg-[#e9a23b] text-4xl font-bold text-[#08090d] shadow-[0_0_60px_rgba(233,162,59,0.22)]">S</div>
+        <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-[#e9a23b]">Sahand TV</p>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Add the app to continue</h1>
+        <p className="mt-4 text-sm leading-6 text-white/55">On iPhone and iPad, Sahand TV works as a Home Screen app so your watch history and full-screen player work properly.</p>
+        <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-left">
+          <div className="flex gap-4"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 text-sm font-bold">1</span><p className="text-sm leading-6 text-white/75">Tap the <strong className="text-white">Share</strong> button in Safari.</p></div>
+          <div className="my-4 ml-4 h-5 border-l border-dashed border-white/20" />
+          <div className="flex gap-4"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 text-sm font-bold">2</span><p className="text-sm leading-6 text-white/75">Choose <strong className="text-white">Add to Home Screen</strong>, then open Sahand TV from your Home Screen.</p></div>
+        </div>
+        <p className="mt-6 text-xs text-white/30">Already installed? Close this tab and open the Sahand TV icon.</p>
+      </div>
+    </main>
+  )
+}
+
 function IOSInstallBanner() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    // Only show on iOS Safari and only if not already installed
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
-    const isInStandaloneMode =
-      ('standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true)
-    const dismissed = sessionStorage.getItem('install-banner-dismissed')
-
-    if (isIOS && !isInStandaloneMode && !dismissed) {
-      // Small delay so it doesn't flash immediately on load
+    const isInStandaloneMode = 'standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true
+    if (isIOS && !isInStandaloneMode) {
       const t = setTimeout(() => setVisible(true), 1500)
       return () => clearTimeout(t)
     }
-  }, [])
-
-  const dismiss = useCallback(() => {
-    sessionStorage.setItem('install-banner-dismissed', '1')
-    setVisible(false)
   }, [])
 
   if (!visible) return null
@@ -145,14 +154,6 @@ function IOSInstallBanner() {
               button then <strong className="text-white/80">"Add to Home Screen"</strong>
             </p>
           </div>
-          <button
-            type="button"
-            aria-label="Dismiss"
-            onClick={dismiss}
-            className="grid size-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/50 transition hover:bg-white/15 hover:text-white"
-          >
-            ×
-          </button>
         </div>
         {/* Notch arrow pointing down toward the share button */}
         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
@@ -421,6 +422,13 @@ function HistoryPanel({ entries, onResume, onClear }: { entries: HistoryEntry[];
 export default function Page() {
   const [name, setName] = useState('')
   const [draftName, setDraftName] = useState('')
+  const [requiresIOSInstall, setRequiresIOSInstall] = useState(false)
+
+  useEffect(() => {
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
+    setRequiresIOSInstall(isIOS && !isStandalone)
+  }, [])
 
   // Tab
   const [activeTab, setActiveTab] = useState<AppTab>('movie')
@@ -508,6 +516,7 @@ export default function Page() {
   // -------------------------------------------------------------------------
   // Name entry screen
   // -------------------------------------------------------------------------
+  if (requiresIOSInstall) return <IOSInstallGate />
   if (!name) {
     return (
       <main className="min-h-screen overflow-hidden bg-[#08090d] text-white">

@@ -166,3 +166,25 @@
     padding-right: env(safe-area-inset-right);
   }
 }
+
+/* Mobile-first app shell: comfortable touch targets and iOS safe areas. */
+html, body { min-height: 100%; background: #08090d; }
+button, a, input, select { -webkit-tap-highlight-color: transparent; }
+@media (max-width: 640px) {
+  body { overflow-x: hidden; }
+  header { position: sticky; top: 0; z-index: 30; }
+  header > div { flex-wrap: wrap; gap: 0.75rem; padding: 0.75rem 1rem; }
+  header form { order: 3; width: 100%; }
+  header form input { min-height: 2.75rem; }
+  nav { width: 100%; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.125rem; }
+  nav::-webkit-scrollbar { display: none; }
+  nav button { min-height: 2.75rem; white-space: nowrap; }
+  main > section { padding-left: 1rem; padding-right: 1rem; }
+  .ios-install-gate { padding-top: max(2.5rem, env(safe-area-inset-top)); padding-bottom: max(2.5rem, env(safe-area-inset-bottom)); }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+  main > section { padding-left: 2rem; padding-right: 2rem; }
+}
+@media (display-mode: standalone) {
+  body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+}
