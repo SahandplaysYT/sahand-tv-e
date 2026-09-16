@@ -58,9 +58,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ trailerKey: trailer?.key ?? null })
   }
 
-  // --- Search ---
+  // --- Popular feed ---
   if (!query) {
-    return NextResponse.json({ error: 'A search term is required.' }, { status: 400 })
+    const endpoint = type === 'tv' ? '/trending/tv/week' : '/trending/movie/week'
+    const res = await tmdbFetch(endpoint, apiKey)
+    if (!res.ok) return NextResponse.json({ error: 'TMDB could not load popular titles.' }, { status: res.status })
+    const data = await res.json()
+    return NextResponse.json({ results: (data.results ?? []).slice(0, 10) })
   }
 
   const endpoint =
