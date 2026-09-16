@@ -627,18 +627,17 @@ export default function Page() {
       </header>
 
       {/* Hero */}
-      <section className={`hero-glow relative mx-auto max-w-7xl overflow-hidden px-6 pb-12 pt-16 lg:px-16 lg:pt-24 ${activeTab === 'history' ? 'hidden' : ''}`}>
-        <div className="pointer-events-none absolute right-0 top-0 size-[560px] rounded-full bg-[#e9a23b]/10 blur-3xl" />
+      <section className={`hero-glow relative mx-auto max-w-7xl overflow-hidden border-b border-white/[0.06] px-6 pb-12 pt-16 lg:min-h-[470px] lg:px-16 lg:pb-16 lg:pt-24 ${activeTab === 'history' ? 'hidden' : ''}`}>
+        <div className="hero-orb pointer-events-none absolute -right-24 -top-28 size-[620px] rounded-full blur-3xl" />
         <div className="relative z-10 max-w-3xl">
-          <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-[#f0a23a]">Movies & TV</p>
-          <h1 className="text-5xl font-semibold leading-[0.94] tracking-[-0.06em] sm:text-7xl lg:text-[5.6rem]">Movies & TV<br /><span className="text-white/40">free, forever.</span></h1>
-          <p className="mt-6 max-w-md text-sm leading-6 text-white/50">Your personal streaming space for the stories you love. Discover something new, or continue exactly where you left off.</p>
+          <h1 className="text-5xl font-semibold leading-[0.94] tracking-[-0.06em] sm:text-7xl lg:text-[5.4rem]">Movies & TV<br /><span className="text-white/35">free, forever.</span></h1>
+          <p className="mt-6 max-w-md text-sm leading-6 text-white/45">Stream your favorite movies and shows without the noise. Discover something new, or pick up right where you left off.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <button onClick={() => setActiveTab('movie')} className="rounded-md bg-white px-6 py-3 text-sm font-bold text-[#08090d] transition hover:bg-[#f0a23a]">Browse now</button>
-            <button onClick={() => setActiveTab('history')} className="rounded-md border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">Continue watching</button>
+            <button onClick={() => setActiveTab('history')} className="rounded-md border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">My history</button>
           </div>
         </div>
-        <div className="pointer-events-none absolute right-10 top-24 hidden w-64 text-center lg:block"><p className="text-sm font-semibold text-white/80">Download the app</p><p className="mt-2 text-xs text-white/35">Take your watchlist anywhere.</p><div className="mx-auto mt-5 grid size-14 place-items-center rounded-2xl bg-white text-xl font-black text-[#08090d] shadow-[0_0_40px_rgba(255,255,255,0.12)]">S</div></div>
+        <div className="hero-download pointer-events-none absolute right-16 top-32 hidden w-64 text-center lg:block"><p className="text-sm font-semibold text-white/80">Download the app</p><p className="mt-2 text-xs text-white/35">Watch anywhere, anytime.</p><div className="mx-auto mt-5 grid size-14 place-items-center rounded-xl bg-white text-xl font-black text-[#08090d] shadow-[0_0_40px_rgba(255,255,255,0.16)]">S</div><div className="mt-8 flex items-center justify-center gap-1.5"><i className="size-1.5 rounded-full bg-white" /><i className="size-1.5 rounded-full bg-white/25" /><i className="size-1.5 rounded-full bg-white/25" /><i className="size-1.5 rounded-full bg-white/25" /><i className="size-1.5 rounded-full bg-white/25" /></div></div>
         <form
           onSubmit={handleSearch}
           className="relative z-10 mt-10 flex max-w-2xl items-center gap-3 rounded-md border border-white/10 bg-black/35 p-2 focus-within:border-[#e9a23b]/70"
@@ -668,7 +667,7 @@ export default function Page() {
       {activeTab === 'history' ? (
         <section className="mx-auto max-w-7xl px-6 pb-16 pt-14 lg:px-16"><HistoryPanel entries={history} onResume={resumeEntry} onClear={clearHistory} /></section>
       ) : (
-      <section className="mx-auto max-w-7xl px-6 pb-16 lg:px-16">
+      <section className="mx-auto max-w-7xl px-6 pb-16 pt-8 lg:px-16">
         <div className="mb-6 flex items-end justify-between">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] text-white/35 uppercase">

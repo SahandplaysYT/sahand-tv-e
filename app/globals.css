@@ -168,7 +168,9 @@
 }
 
 /* Cinematic streaming landing treatment. */
-.hero-glow { background: radial-gradient(circle at 78% 15%, rgba(233,162,59,.24), transparent 32%), radial-gradient(circle at 42% 50%, rgba(255,255,255,.04), transparent 38%); }
+.hero-glow { background: radial-gradient(ellipse at 78% 15%, rgba(233,162,59,.25), transparent 27%), radial-gradient(ellipse at 43% 25%, rgba(100,105,115,.13), transparent 34%), linear-gradient(180deg, rgba(255,255,255,.02), transparent 70%); }
+.hero-orb { background: radial-gradient(circle at 40% 40%, rgba(233,162,59,.24), rgba(91,52,18,.08) 32%, transparent 67%); }
+.hero-download { text-shadow: 0 2px 20px rgba(255,255,255,.12); }
 
 /* Mobile-first app shell: comfortable touch targets and iOS safe areas. */
 html, body { min-height: 100%; background: #08090d; }
